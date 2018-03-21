@@ -1,0 +1,1 @@
+pscp 本地文件 用户名@LinuxIP:目录

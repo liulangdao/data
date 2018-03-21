@@ -1,0 +1,25 @@
+使用puttygen生成SSH密钥实现Putty免密码登录
+
+jincon 发表于 2014-06-02 20:49:00 发表在: 服务器运维
+使用puttygen生成ssh密钥实现putty免密码登录的好处有很多，第一可以免掉输入密码，减轻工作量，第二嘛，不会忘记密码。所以我在管理服务器的时候都这样做的。使用puttygen生成SSH密钥实现Putty免密码登录。这次把这个过程记录下来，方便自己和方便别人，哈哈~~~
+使用puttygen.exe生成SSH密钥
+1、下载Puttygen.exe（网上自己下载吧。）
+
+2、打开puttygen.exe，点击按钮Generate,并在空白处随意移动鼠标以便产生随机数据。保持各项参数默认，点击按钮Save private key,会提醒“Are you sre you want to save this key without a passphrase to protect it ?”，可以不需要密码保护，点击是即可。
+
+创建.ssh/authorized_keys
+1、通过Putty密码方式登录CentOS，创建文件authorized_keys（注意，这里，有时候默认没有.ssh目录会导致创建失败，所以没有先建立目录先，然后继续创建文件哈。）
+
+
+1
+vim ~/.ssh/authorized_keys
+
+2、把刚才用puttygen.exe软件生成的密钥(显示的公钥()由OpenSSH认可：下面的内容)复制并粘贴到authorized_keys文件，保存退出。
+
+设置putty实现用证书登录
+Putty→Session:将Host Name(Or IP Address)填好
+Putty→Connection→Date:填好Auto-login username(自动登陆用户名)
+Putty→Connection→SSH→Auth:在Private key file for authentication选择认证私钥文件
+回到Putty→Session:Saved Session,填个名称保存下吧,下次直接双击名称就可以登录了,赶紧登录吧.
+
+至此，你的Putty已经可以不用密码登录CentOS了，不过记得保管好你的密钥文件。
