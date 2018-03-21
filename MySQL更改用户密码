@@ -1,0 +1,7 @@
+mysql -u root
+
+mysql> use mysql;
+
+mysql> UPDATE user SET authentication_string = PASSWORD('newpass') WHERE user = 'root';
+
+mysql> FLUSH PRIVILEGES;
