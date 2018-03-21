@@ -1,0 +1,6 @@
+1：从容器内复制文件到宿主机
+例如：docker cp mycontainer:要复制的容器内文件 复制到本地文件
+2、更改文件内容
+3将文件从宿主机复制到容器内覆盖原文件
+docker cp /opt/test/file.txt mycontainer：/opt/testnew/
+4、不管容器有没有启动，拷贝命令都会生效
