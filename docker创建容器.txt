@@ -1,0 +1,1 @@
+sudo docker create -ti --name 容器名称 --network 指定网络名称 指定镜像 /bin/bash
