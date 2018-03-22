@@ -1,0 +1,58 @@
+利用 Docker 运行 MongoDB
+
+在服务器上通过 Docker 运行 MongoDB，可以省略本地安装数据库的步骤，并且日常的运维和使用与本地安装基本没有区别。
+
+基本思路
+我们将使用官方的 mongo 镜像（image），并将 27017 端口映射到主机端口，同时利用 Docker Volume 将数据库文件保存在主机上而非容器（container）中。
+
+通过端口映射，可以直接连接主机的 27017 端口。比如如果你在使用一些 GUI 管理工具，不会有任何影响。
+
+通过 Volume 将文件保存在主机，与容器分离，数据的使用与容器无关，所有针对数据的操作（比如备份、恢复）都不受影响。
+
+
+注意： 首次运行不要开启授权登入 --auth
+
+运行 mongo
+我们可以直接使用官方的 mongo 镜像或docker pull mongo镜像.mongo后不指定具体版本将默认为latest，也可指定版本，如：mongo：3.4
+
+docker run --name <YOUR-NAME> -p 27017:27017 -v $PWD/data/db:/data/db -d mongo
+—name 指定库的名字，如果不指定会使用一串随机字符串。
+
+-p 27017:27017 官方的镜像已经暴露了 27017 端口，我们将它映射到主机的端口上。如果你不使用默认端口，将 : 前面的数字改成自定义端口。
+
+-v /data/db:/data/db 冒号前面的是主机上的文件路径，将它挂载到库中的文件夹下，实际对文件的读写就会在主机文件上操作。
+
+-d 在后台运行。
+
+mongo 指定镜像版本，默认是 latest 。建议总是自己指定版本。
+
+
+
+然后执行一下 docker ps 确认一下库已经正常运行起来。
+
+新建管理员
+现在我们需要进入 mongo shell 操作：
+
+我们可以直接从宿主机进入mongo admin数据库
+输入：mongo admin
+进入mongo交互界面后，新建管理员账户
+需要明白的一点是，管理员需要在admin数据库下创建，所以我们得进入admin数据库
+
+> db.createUser({ user: '<USER>', pwd: '<PASSWORD>', roles: [ { role: 'userAdminAnyDatabase', db: 'admin' } ]});
+Successfully added user: {
+    "user" : "<USER>",
+    "roles" : [
+        {
+            "role" : "userAdminAnyDatabase",
+            "db" : "admin"
+        }
+    ]
+}
+
+创建管理员后开启授权登入
+关闭mongod服务
+删除mongodb容器，因为数据库在宿主机上，所以所以建立的数据和管理员用户都在
+重新简历mongodb容器
+docker run --name <YOUR-NAME> -p 27017:27017 -v $PWD/data/db:/data/db -d mongo --auth
+此时加上--auth开启授权登入
+之后操作数据库就要认证了
