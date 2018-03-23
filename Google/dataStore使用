@@ -1,0 +1,112 @@
+Google Cloud Datastore — 具高度擴充性的 NoSQL 資料庫
+作者我對 GCP（Google Cloud Platform）提供的服務一直都滿有興趣，最近幾天用了 GCP 的 Cloud Datastore 跟 Node.js 實作了一個有基本 CRUD 功能的 API server，趁我還記得的時候趕快寫文章跟大家分享一下
+
+
+Cloud DataStore 是什麼
+Cloud DataStore 是一個具高度擴充性的 NoSQL 資料庫，他會自動備份資料確保資料完整性，而且資料一旦寫入之後在任何地方都會讀到最新的資料，不用擔心 consistency 的問題，資料量大的話還會自己做 scale，所以不管是要做大規模的系統或是小型應用都很適合，想看更多介紹的話可以到這裡
+
+要怎麼開始使用 GCP
+Cloud Datastore 是 GCP 提供眾多服務中的其中一個，要開始使用 GCP 的話可以點網站右上角的「免費試用」，點進去填完資料之後就可以獲得一年內 300 美元的試用額度
+
+
+新增專案
+開始免費試用之後接著就是要新增專案，我這邊新增了一個專案叫做 nodejs-crud，他會隨機給你一個專案 ID，像我這邊就是 nodejs-crud-187502
+
+
+填完之後就按下建立，之後到專案內的資訊主頁
+
+
+開始使用 DataStore
+建立好專案之後，可以點左邊的資料儲存庫，然後建立實體
+
+
+點了建立實體之後，他會讓你選擇你的資料要放在哪裡，選一個離你比較近的地方就可以了，選完位置之後會要求你填一些東西，這邊都不用填，只要在「種類」那邊填上 todo，這樣我們就建立好我們的 datastore 實體了 🎉
+
+
+建立服務帳戶
+有了 Datastore 實體之後，我們還需要一個 key 才可以用程式去存取我們的 Datastore，所以需要建立一個服務帳戶
+
+
+到服務帳戶頁面之後點擊「建立服務帳戶」，帳戶名稱 admin，角色選擇「Cloud Datastore Owner」，然後記得把「提供一組新的私密金鑰」打勾，建立之後我們就會拿到一組 keyfile，這個 keyfile 可能會叫做 nodejs-crud-xxxxx.json，記得把它留好，不小心外洩出去的話別人就可以存取你 datastore 裡面的資料
+
+
+終於可以開始寫 Code 了
+GCP 上的設定就到此告一段落，接下來就要開始寫扣實作出 API server，因為我是用 Node.js 實作，會用到 google-cloud-node 這個 library，比較熟悉 python 的人可以用 google-cloud-python，或是其他語言也可以找到相對應的 library
+
+先寫一小段扣把資料存進去再拿出來，確認我們可以存取 datastore，記得把 projectId跟 keyFilename 換成自己的 ID 跟 keyfile 路徑，懶得自己動手寫的話可以直接 clone 這個 repo 下來跑
+
+const gcloud = require('google-cloud')
+const datastore = gcloud.datastore({
+  projectId: 'nodejs-crud-187502',
+  keyFilename: './nodejs-crud-50950fbd958a.json',
+})
+const key = datastore.key(['todo', 'id123'])
+const item = {
+  content: 'I am data',
+}
+datastore
+  .save({ key: key, data: item })
+  .then(() => datastore.get(key))
+  .then(results => {
+    console.log(results[0].content)
+  })
+如果剛剛設定都沒問題的話應該會輸出 I am data，確認之後就開始實作 API server，這邊會用到 Node.js 的 express，對 express 這個框架不熟的話也可以用自己熟悉的，先把 API 格式都開出來，接著就是慢慢把 CRUD 實作完，這邊有完整的 source code
+
+const app = express()
+app.use(bodyParser.text())
+// create a new item
+app.post('/api/todo', (req, res) => {})
+// get an item
+app.get('/api/todo/:id', (req, res) => {})
+// update an item
+app.put('/api/todo/:id', (req, res) => {})
+// delete an item
+app.delete('/api/todo/:id', (req, res) => {})
+C：新增一個 item
+要新增一個 item 首先要先讀取 body，隨機產生一個 id 之後把 body 當做內容存到 datastore，這裡會使用 uuid 產生 id，存完內容之後再把 id 丟到前端，詳細的 datastore API 可以參考 datastore.save
+
+const content = req.body
+const id = uuid()
+const key = datastore.key(['todo', id])
+const entity = {
+  key,
+  data: { content },
+}
+datastore.save(entity).then(() => {
+  res.end(id)
+})
+R：根據 id 讀取某個 item
+在 datastore 中不論讀寫都是使用 key，只要用同樣的 key 就會讀到一樣的東西，所以如果要根據 id 讀取的話要先用 id 生成一個 key，再用 key 去讀資料。另外，因為 datastore.get 一次可以讀好幾筆資料，我們只需要第一筆，所以只回傳 results[0].content
+
+const { id } = req.params
+const key = datastore.key(['todo', id])
+datastore.get(key).then(results => {
+  res.send(results[0].content)
+})
+U：根據 id 更新某個 item
+在 datastore 的操作中沒有真正的 update，雖然有提供 datastore.update 這個方法可以使用，但他其實是 map 到 datastore.save，所以沒有真正的 update，要更新一筆資料，就直接把新的資料存到同樣的 key 中就可以了
+
+const newContent = req.body
+const { id } = req.params
+const key = datastore.key(['todo', id])
+const entity = {
+  key,
+  data: { content: newContent },
+}
+datastore.save(entity).then(() => {
+  res.end(id)
+})
+D：根據 id 刪除某個 item
+delete 的話大概是 CRUD 裡面最簡單的，直接使用 datastore.delete，把 key 傳進去就可以刪掉了～
+
+const { id } = req.params
+const key = datastore.key(['todo', id])
+datastore.delete(key).then(results => {
+  res.send(id)
+})
+總結
+不知道大家做完有沒有一種很輕鬆的感覺 XD，我自己是覺得還滿方便的，因為以往如果要用資料庫的話還要自己架，而且常常會遇到 server 上的 mongo 沒裝好或跑不起來等情況，用 GCP 的 datastore 就沒這個困擾
+
+但方便也是有代價的，就是要花 $$$，不過我自己算一算其實不貴，如果只是做小專案的話還可以用它的永久免費額度，大型系統的話雖然要花錢，但因為他會 auto scale 而且保證 consistency，用它應該也可以省下不少維護上的成本，想自己算算看的話可以試試 GCP calculator
+
+希望大家喜歡這次 Google Cloud Datastore 的分享，以後如果有機會也會再介紹 GCP 上的其他服務
