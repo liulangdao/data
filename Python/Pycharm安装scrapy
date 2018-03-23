@@ -1,0 +1,50 @@
+在我的环境下安装步骤
+1、到这里下载twisted相应版本
+https://www.lfd.uci.edu/~gohlke/pythonlibs/
+例如python 3.5
+就下载：
+       Twisted-17.9.0-cp35-cp35m-win_amd64.whl
+       
+2、将下载的文件复制到pycharm项目的虚拟环境下
+        用户主目录\PycharmProjects\scrapy\venv\Scripts
+        
+3、安装twisted
+       终端下进入：用户主目录\PycharmProjects\scrapy\venv\Scripts
+       运行：python.exe -m pip install Twisted-17.9.0-cp35-cp35m-win_amd64.whl
+       安装成功后会在当前目录下生成twistd.exe和twist.exe
+       
+4、 在pycharm安装scrapy库
+       
+
+
+网上资料
+
+how to Install Scrapy in Pycharm IDE on windows machine- Pain
+Installing Scrapy on a windows machine is rather annoying.
+The issue is caused by the dependencies lxml  , I am using virutal environment. 
+
+Open the project page ( ctrl  alt  S )
+
+First , Type in wheel in the search and  install the package wheel. 
+
+then go to this website and find xml and choose win32 if you have intel processor or amd64 if you have amd processor. 
+http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
+
+
+
+The copy the file to somewhere in your virtualenv and run the following command on it.
+
+python.exe -m pip install lxml-3.6.1-cp27-cp27m-win32.whl
+
+here is the output.
+
+C:\Users\Elin\virtualenv1\Scripts>python.exe -m pip install lxml-3.6.1-cp27-cp27m-win32.whl
+
+Processing c:\users\elin\virtualenv1\scripts\lxml-3.6.1-cp27-cp27m-win32.whl
+Installing collected packages: lxml
+Successfully installed lxml-3.6.1
+
+Finally, go back to the project package on pycharm editor
+open it , ( ctrl  shift  S )
+
+Type Scrapy and install it.
