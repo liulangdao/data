@@ -1,0 +1,3 @@
+提取链接中包含shijian字段的href属性
+例如：shijian  = time.strftime("%y/%m%d",time.localtime())
+response.xpath("//a[contains(@href,'%s')]/@href" % shijian).extract()
