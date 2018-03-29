@@ -1,0 +1,122 @@
+如查要切换默认工程
+使用
+
+gcloud config set project 工程名称
+
+
+
+
+
+
+ 发表于 2017-10-21 |  0 |   50 |  字数统计 1,278 |  阅读时长 6
+前言
+因为谷歌云平台SDK内容丰富，功能强大，不可能一篇文章就介绍完。
+在这里只做一个索引。介绍实用功能，常用参数的使用。
+更多更详细的说明，还是看官方文档。
+
+如何安装
+工具是用python写的，支持全平台。
+平台自己创建的linux虚机是默认安装好了的。
+
+参见Installing Cloud SDK
+
+windows平台
+下载文件，地址：https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-176.0.0-windows-x86_64.zip
+
+运行
+
+.\google-cloud-sdk\install.bat
+Debian and Ubuntu ( apt-get 方式 )
+创建环境变量
+export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
+增加Cloud SDK 的地址到源中
+echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+导入Google Cloud 的公钥
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+更新和安装Cloud SDK
+sudo apt-get update && sudo apt-get install google-cloud-sdk
+如何配置
+它一是套SDK，用API的方式来操作云端资源，采取了用OAuth方式来拿到google账号的权限。
+运行
+
+gcloud init
+会需要认证，按提示操作就行。
+
+基本就是选择账号，选择项目，选择区域(可选)
+
+常用功能
+这里只介绍创建虚拟机，查看虚拟机，配置基本操作
+
+创建虚拟机
+gcloud compute instances create examplevm
+一条简单的命令就会进入创建向导。
+
+几个常见的配置
+指定区域 --zone=asia-east1-b,通过gcloud compute zones list可以查看列表。也可以通过gcloud config set compute/zone ZONE来设置默认区域
+指定机器类型 --machine-type=f1-micro,可以在Machine Types 看到所有的机器类型，不同类型收费不同。也可以用gcloud compute machine-types list来查看
+指定镜像工程 --image-project=ubuntu-os-cloud，可以通过gcloud compute images list 查看所有的官方镜像列表。其中的PROJECT列，是指定该参数。
+指定镜像名--image=ubuntu-1710-artful-v20171017
+指定标签 --tags=allow-http,这是用来设置应用的防火墙规则的。比如在防火墙配置中增加一条规则标签为A，则当创建虚拟机时指定标签A，则应用A标签中的规则。可以应用多个标签。很灵活的配置虚拟机防火墙规则。
+高级配置
+使用--async来异步的创建。这样就不用等待创建完成才返回。
+使用 --metadata-from-file 来配置启动脚本 --metadata-from-file startup-script=/home/ff/install.sh,install.sh为本地文件系统中的文件。
+创建一个典型的虚拟机
+gcloud compute instances create example --zone=asia-east1-b --machine-type=f1-micro --image-project=ubuntu-os-cloud --image=ubuntu-1710-artful-v20171017
+查看虚拟机
+查看虚拟机列表
+gcloud compute instances list
+查看虚拟机详细信息
+gcloud compute instances describe example
+删除
+gcloud compute instances delete example
+增加虚拟机标签
+这可以增加防火墙规则时使用
+
+gcloud compute instances add-tags s2 --tags=allow-http
+连接到机器上
+gcloud compute config-ssh
+会为每个实体产生ssh的配置文件
+然后用
+
+ssh <机器名>.<区域>.<工程名>
+就可以连接上
+
+防火墙的设置
+查看规则
+gcloud compute firewall-rules list
+以指定格式查看,就是要查看tag。
+
+gcloud compute firewall-rules list --format="table(name,sourceTags.list():label=SRC_TAGS,targetTags.list():label=TARGET_TAGS)"
+创建防火墙规则
+gcloud compute firewall-rules create allow-http  --allow tcp:80 --target-tags=allowhttp
+这里要说两个参数
+A list of instance tags indicating which instances the rule is applied to.
+
+--target-tags 实例的标签列表，来指定哪个实例应用这个规则。比如在创建实例时，会有--tags参数可选，这个参数指定了allowhttp标签，则实例应用上面规则允许80端口的连接。
+
+A list of instance tags indicating which instances the rule is applied to.
+
+--source-tags 实例的标签列表指定网络标签。如果--source-ranges 和--source-tags 都没有指定，则默认为0.0.0.0/0表示所有入口网络。
+
+A list of instance tags indicating the set of instances on the network to which the rule applies if all other fields match.
+
+切换工程
+每个命令都会接收全局的参数，可以使用--project <projectname> 来指定工程。
+
+如查要切换默认工程
+使用
+
+gcloud config set project 工程名称
+可能会遇到的问题
+帐号没权限或者没设置帐号
+Insufficient Permission
+需要启用api
+Access Not Configured. Compute Engine API has not been used in project 1861575654 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1861575654 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+镜像找不到
+ERROR: (gcloud.compute.instances.create) Could not fetch resource:
+ - The resource 'projects/<projectid>/global/images/ubuntu-1710-artful-v20171017' was not found
+定位镜像，要通过镜像工程名和镜像名来指定。
+--image-project是指定的镜像工程，如果不指定，将会当前工程。
+但如果我们使用的是系统提供的镜像。
+就需要指定--image-project，比如ubuntu-os-cloud
+通过gcloud compute images list可以列出。
